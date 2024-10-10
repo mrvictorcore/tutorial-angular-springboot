@@ -1,0 +1,29 @@
+.container {
+    min-width: 350px;
+    max-width: 500px;
+    width: 100%;
+
+    form {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 20px;
+    }
+
+    .date-container {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px; /* Ajusta el espacio entre los campos de fecha */
+    }
+
+    .date-container mat-form-field {
+        width: 100%; /* Los campos de fecha ocupan el 100% del espacio disponible */
+    }
+
+    .buttons {
+        text-align: right;
+
+        button {
+            margin-left: 10px;
+        }
+    }
+}
