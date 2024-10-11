@@ -1,11 +1,12 @@
-import { Component, OnInit } from '@angular/core';
-import { MatDialogRef } from '@angular/material/dialog';
+import { Component, Inject, OnInit } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { LoanService } from '../loan.service';
 import { Loan } from '../model/Loan';
 import { Client } from 'src/app/client/model/Client';
 import { Game } from 'src/app/game/model/Game';
 import { ClientService } from 'src/app/client/client.service';
 import { GameService } from 'src/app/game/game.service';
+import { DialogAlertComponent } from 'src/app/core/dialog-alert/dialog-alert.component';
 
 @Component({
   selector: 'app-loan-edit',
@@ -20,9 +21,11 @@ export class LoanEditComponent implements OnInit {
 
   constructor(
     public dialogRef: MatDialogRef<LoanEditComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: any,
     private loanService: LoanService,
     private clientService: ClientService,
-    private gameService: GameService
+    private gameService: GameService,
+    public dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
@@ -38,7 +41,7 @@ export class LoanEditComponent implements OnInit {
     this.loan.endDate = this.convertToISODate(endDate);
 
     if (endDate < startDate) {
-      alert('La fecha de fin no puede ser anterior a la fecha de inicio.');
+      this.openAlertDialog('Error al guardar prestamo', 'La fecha de fin no puede ser anterior a la fecha de inicio.');
       return;
     }
 
@@ -46,13 +49,13 @@ export class LoanEditComponent implements OnInit {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
 
     if (diffDays > this.maxLoanDays) {
-      alert('El periodo de préstamo no puede superar los 14 días.');
+      this.openAlertDialog('Error al guardar prestamo', 'El periodo de préstamo no puede superar los 14 días.');
       return;
     }
 
     this.loanService.checkLoanValidity(this.loan).subscribe(isValid => {
       if (!isValid) {
-        alert('Este préstamo no es válido debido a conflictos con otros préstamos.');
+        this.openAlertDialog('Error al guardar prestamo', 'Este préstamo no es válido debido a conflictos con otros préstamos.');
         return;
       }
 
@@ -71,5 +74,11 @@ export class LoanEditComponent implements OnInit {
 
   onClose() {
     this.dialogRef.close();
+  }
+
+  openAlertDialog(title: string, description: string): void {
+    this.dialog.open(DialogAlertComponent, {
+      data: { title: title, description: description }
+    });
   }
 }
