@@ -76,19 +76,19 @@ export class LoanListComponent implements OnInit {
         direction: 'ASC'
       }]
     };
-
+  
     if (event != null) {
       pageable.pageSize = event.pageSize;
       pageable.pageNumber = event.pageIndex;
     }
-
+  
     this.loanService.getLoans(pageable).subscribe(data => {
       this.dataSource.data = data.content;
       this.pageNumber = data.pageable.pageNumber;
       this.pageSize = data.pageable.pageSize;
       this.totalElements = data.totalElements;
     });
-  } 
+  }
 
   createLoan() {
     const dialogRef = this.dialog.open(LoanEditComponent, { data: {} });

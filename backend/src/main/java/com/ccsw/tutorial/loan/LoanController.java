@@ -1,16 +1,14 @@
 package com.ccsw.tutorial.loan;
 
-import java.util.List;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ccsw.tutorial.loan.model.Loan;
 import com.ccsw.tutorial.loan.model.LoanDto;
+import com.ccsw.tutorial.loan.model.LoanSearchDto;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,16 +39,13 @@ public class LoanController {
     @Autowired
     ModelMapper mapper;
 
-    @PostMapping("/paginated")
-    public Page<Loan> getPaginatedLoans(Pageable pageable) {
-        return loanService.findPaginated(pageable);
-    }
-
-    @Operation(summary = "Find", description = "Method that returns a list of Loans")
-    @GetMapping("")
-    public List<LoanDto> findLoans() {
-        List<Loan> loans = loanService.findAll();
-        return loans.stream().map(e -> mapper.map(e, LoanDto.class)).collect(Collectors.toList());
+    @Operation(summary = "Find Page", description = "Method that return a page of Loans")
+    @RequestMapping(path = "/paginated", method = RequestMethod.POST)
+    public Page<LoanDto> findPage(@RequestBody LoanSearchDto dto) {
+        Page<Loan> page = this.loanService.findPage(dto);
+        return new PageImpl<>(
+                page.getContent().stream().map(e -> mapper.map(e, LoanDto.class)).collect(Collectors.toList()),
+                page.getPageable(), page.getTotalElements());
     }
 
     /**

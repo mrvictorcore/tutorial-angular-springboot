@@ -34,31 +34,48 @@ export class LoanEditComponent implements OnInit {
   }
 
   onSave() {
+    if (!this.loan.client || !this.loan.client.id) {
+      this.openAlertDialog('Error al guardar prestamo', 'Debe seleccionar un cliente.');
+      return;
+    }
+  
+    if (!this.loan.game || !this.loan.game.id) {
+      this.openAlertDialog('Error al guardar prestamo', 'Debe seleccionar un juego.');
+      return;
+    }
+
+    if (!this.loan.startDate) {
+      this.openAlertDialog('Error al guardar préstamo', 'Debe seleccionar la fecha de inicio.');
+      return;
+    }
+
+    if (!this.loan.endDate) {
+      this.openAlertDialog('Error al guardar préstamo', 'Debe seleccionar la fecha de fin.');
+      return;
+    }
+  
     const startDate = new Date(this.loan.startDate);
     const endDate = new Date(this.loan.endDate);
-
-    this.loan.startDate = this.convertToISODate(startDate);
-    this.loan.endDate = this.convertToISODate(endDate);
-
+  
     if (endDate < startDate) {
       this.openAlertDialog('Error al guardar prestamo', 'La fecha de fin no puede ser anterior a la fecha de inicio.');
       return;
     }
-
+  
     const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-
+  
     if (diffDays > this.maxLoanDays) {
       this.openAlertDialog('Error al guardar prestamo', 'El periodo de préstamo no puede superar los 14 días.');
       return;
     }
-
+  
     this.loanService.checkLoanValidity(this.loan).subscribe(isValid => {
       if (!isValid) {
         this.openAlertDialog('Error al guardar prestamo', 'Este préstamo no es válido debido a conflictos con otros préstamos.');
         return;
       }
-
+  
       this.loanService.saveLoan(this.loan).subscribe(() => {
         this.dialogRef.close();
       });

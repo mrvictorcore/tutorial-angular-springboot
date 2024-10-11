@@ -15,7 +15,7 @@ export class LoanService {
   constructor(private http: HttpClient) { }
 
   getLoans(pageable: Pageable): Observable<LoanPage> {
-    return this.http.post<LoanPage>(`${this.apiUrl}/paginated`, pageable);
+    return this.http.post<LoanPage>(`${this.apiUrl}/paginated`, { pageable: pageable });
   }
 
   getLoansFiltered(title?: string, clientId?: number, gameId?: number, filterDate?: Date): Observable<Loan[]> {
