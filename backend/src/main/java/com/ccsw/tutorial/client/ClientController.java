@@ -22,7 +22,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Client", description = "API of Client")
 @RestController
 @RequestMapping(value = "/client")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
 public class ClientController {
 
     @Autowired

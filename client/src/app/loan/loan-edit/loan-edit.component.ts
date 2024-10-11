@@ -34,6 +34,9 @@ export class LoanEditComponent implements OnInit {
     const startDate = new Date(this.loan.startDate);
     const endDate = new Date(this.loan.endDate);
 
+    this.loan.startDate = this.convertToISODate(startDate);
+    this.loan.endDate = this.convertToISODate(endDate);
+
     if (endDate < startDate) {
       alert('La fecha de fin no puede ser anterior a la fecha de inicio.');
       return;
@@ -57,6 +60,13 @@ export class LoanEditComponent implements OnInit {
         this.dialogRef.close();
       });
     });
+  }
+
+  convertToISODate(date: Date): string {
+    const offsetMs = date.getTimezoneOffset() * 60 * 1000;
+    const adjustedDate = new Date(date.getTime() - offsetMs);
+    
+    return adjustedDate.toISOString().split('T')[0];
   }
 
   onClose() {

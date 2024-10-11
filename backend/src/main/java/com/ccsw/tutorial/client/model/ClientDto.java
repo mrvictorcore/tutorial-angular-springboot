@@ -5,7 +5,6 @@ public class ClientDto {
     private Long id;
     private String name;
 
-    // Getters y setters
     public Long getId() {
         return id;
     }

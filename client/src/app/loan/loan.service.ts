@@ -15,7 +15,7 @@ export class LoanService {
   constructor(private http: HttpClient) { }
 
   getLoans(pageable: Pageable): Observable<LoanPage> {
-    return this.http.post<LoanPage>(`${this.apiUrl}/paginated`, { pageable });
+    return this.http.post<LoanPage>(`${this.apiUrl}/paginated`, pageable);
   }
 
   getLoansFiltered(title?: string, clientId?: number, gameId?: number, filterDate?: Date): Observable<Loan[]> {
@@ -23,7 +23,11 @@ export class LoanService {
   }
 
   saveLoan(loan: Loan): Observable<Loan> {
-    return this.http.put<Loan>(`${this.apiUrl}/${loan.id}`, loan);
+    if (loan.id) {
+      return this.http.put<Loan>(`${this.apiUrl}/${loan.id}`, loan);
+    } else {
+      return this.http.post<Loan>(this.apiUrl, loan);
+    }
   }
 
   deleteLoan(id: number): Observable<void> {
