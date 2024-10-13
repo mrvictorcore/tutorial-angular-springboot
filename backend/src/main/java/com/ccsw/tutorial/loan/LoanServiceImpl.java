@@ -1,5 +1,6 @@
 package com.ccsw.tutorial.loan;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.modelmapper.ModelMapper;
@@ -94,5 +95,10 @@ public class LoanServiceImpl implements LoanService {
                 loanDto.getStartDate(), loanDto.getEndDate());
 
         return conflictingLoans.isEmpty();
+    }
+
+    @Override
+    public List<Loan> findLoansFiltered(String title, Long clientId, LocalDate searchDate) {
+        return loanRepository.findLoansFiltered(title, clientId, searchDate);
     }
 }

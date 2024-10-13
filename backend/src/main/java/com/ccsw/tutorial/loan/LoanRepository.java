@@ -21,4 +21,11 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
             + ":endDate BETWEEN l.startDate AND l.endDate) OR " + "(l.startDate BETWEEN :startDate AND :endDate))")
     List<Loan> findConflictingLoans(@Param("gameId") Long gameId, @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
+
+    @Query("SELECT l FROM Loan l WHERE "
+            + "(:title IS NULL OR LOWER(l.game.title) LIKE LOWER(CONCAT('%', :title, '%'))) AND "
+            + "(:clientId IS NULL OR l.client.id = :clientId) AND "
+            + "(:searchDate IS NULL OR :searchDate BETWEEN l.startDate AND l.endDate)")
+    List<Loan> findLoansFiltered(@Param("title") String title, @Param("clientId") Long clientId,
+            @Param("searchDate") LocalDate searchDate);
 }

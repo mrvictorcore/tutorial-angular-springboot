@@ -2,21 +2,19 @@
     <div class="filters">
         <form>
             <mat-form-field>
-                <mat-label>Juego</mat-label>
-                <mat-select disableRipple [(ngModel)]="filterGame" name="game">
-                  <mat-option *ngFor="let game of games" [value]="game">{{game.title}}</mat-option>
-                </mat-select>
+                <mat-label>Título del juego</mat-label>
+                <input type="text" matInput placeholder="Título del juego" [(ngModel)]="filterTitle" name="title">
             </mat-form-field>
 
             <mat-form-field>
                 <mat-label>Cliente</mat-label>
-                <mat-select disableRipple [(ngModel)]="filterClient" name="client">
+                <mat-select [(ngModel)]="filterClient" name="client">
                     <mat-option *ngFor="let client of clients" [value]="client">{{client.name}}</mat-option>
                 </mat-select>
             </mat-form-field>
 
             <mat-form-field>
-                <mat-label>Fecha de préstamo</mat-label>
+                <mat-label>Fecha</mat-label>
                 <input matInput [matDatepicker]="datePicker" [(ngModel)]="filterDate" name="filterDate">
                 <mat-datepicker-toggle matSuffix [for]="datePicker"></mat-datepicker-toggle>
                 <mat-datepicker #datePicker></mat-datepicker>

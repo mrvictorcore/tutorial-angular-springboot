@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { LoanPage } from './model/LoanPage';
 import { Pageable } from '../core/model/page/Pageable';
@@ -18,8 +18,13 @@ export class LoanService {
     return this.http.post<LoanPage>(`${this.apiUrl}/paginated`, { pageable: pageable });
   }
 
-  getLoansFiltered(title?: string, clientId?: number, gameId?: number, filterDate?: Date): Observable<Loan[]> {
-    return this.http.get<Loan[]>(this.composeFindUrl(title, clientId, gameId, filterDate));
+  getLoansFiltered(title?: string, clientId?: number, searchDate?: string): Observable<Loan[]> {
+    let params = new HttpParams();
+    if (title) params = params.set('title', title);
+    if (clientId) params = params.set('clientId', clientId.toString());
+    if (searchDate) params = params.set('searchDate', searchDate);
+
+    return this.http.get<Loan[]>(`${this.apiUrl}/filtered`, { params });
   }
 
   saveLoan(loan: Loan): Observable<Loan> {
@@ -36,35 +41,5 @@ export class LoanService {
 
   checkLoanValidity(loan: Loan): Observable<boolean> {
     return this.http.post<boolean>(`${this.apiUrl}/validate`, loan);
-  }
-
-  private composeFindUrl(title?: string, clientId?: number, gameId?: number, filterDate?: Date): string {
-    let params = '';
-
-    if (title != null) {
-      params += `title=${title}`;
-    }
-
-    if (clientId != null) {
-      if (params !== '') params += '&';
-      params += `clientId=${clientId}`;
-    }
-
-    if (gameId != null) {
-      if (params !== '') params += '&';
-      params += `gameId=${gameId}`;
-    }
-
-    if (filterDate != null) {
-      if (params !== '') params += '&';
-      params += `filterDate=${filterDate.toISOString()}`;
-    }
-
-    let url = this.apiUrl;
-    if (params !== '') {
-      url += `?${params}`;
-    }
-
-    return url;
   }
 }

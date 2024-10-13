@@ -43,9 +43,7 @@ export class LoanListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadPage();
-
     this.gameService.getGames().subscribe(games => this.games = games);
-
     this.clientService.getClients().subscribe(clients => this.clients = clients);
   }
 
@@ -53,18 +51,12 @@ export class LoanListComponent implements OnInit {
     this.filterTitle = null;
     this.filterClient = null;
     this.filterDate = null;
-    this.onSearch();
+  
+    this.loadPage();
   }
 
   onSearch(): void {
-    let title = this.filterTitle;
-    let clientId = this.filterClient != null ? this.filterClient.id : null;
-    let gameId = this.filterGame != null ? this.filterGame.id : null;
-    let filterDate = this.filterDate;
-
-    this.loanService.getLoansFiltered(title, clientId, gameId, filterDate).subscribe(
-      loans => this.loans = loans
-    );
+    this.loadPage();
   }
 
   loadPage(event?: PageEvent) {
@@ -76,18 +68,31 @@ export class LoanListComponent implements OnInit {
         direction: 'ASC'
       }]
     };
-  
+
     if (event != null) {
       pageable.pageSize = event.pageSize;
       pageable.pageNumber = event.pageIndex;
     }
-  
-    this.loanService.getLoans(pageable).subscribe(data => {
-      this.dataSource.data = data.content;
-      this.pageNumber = data.pageable.pageNumber;
-      this.pageSize = data.pageable.pageSize;
-      this.totalElements = data.totalElements;
-    });
+
+    if (this.filterTitle || this.filterClient || this.filterDate) {
+      let title = this.filterTitle;
+      let clientId = this.filterClient ? this.filterClient.id : null;
+      let searchDate = this.filterDate ? this.filterDate.toISOString().split('T')[0] : null;
+
+      this.loanService.getLoansFiltered(title, clientId, searchDate).subscribe(loans => {
+        this.loans = loans;
+        this.dataSource.data = loans;
+        this.totalElements = loans.length;
+      });
+
+    } else {
+      this.loanService.getLoans(pageable).subscribe(data => {
+        this.dataSource.data = data.content;
+        this.pageNumber = data.pageable.pageNumber;
+        this.pageSize = data.pageable.pageSize;
+        this.totalElements = data.totalElements;
+      });
+    }
   }
 
   createLoan() {
