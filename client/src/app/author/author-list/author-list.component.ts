@@ -33,58 +33,58 @@ export class AuthorListComponent implements OnInit {
 
   loadPage(event?: PageEvent) {
     let pageable : Pageable =  {
-        pageNumber: this.pageNumber,
-        pageSize: this.pageSize,
-        sort: [{
+      pageNumber: this.pageNumber,
+      pageSize: this.pageSize,
+      sort: [{
         property: 'id',
         direction: 'ASC'
-        }]
+      }]
     }
 
     if (event != null) {
-        pageable.pageSize = event.pageSize
-        pageable.pageNumber = event.pageIndex;
+      pageable.pageSize = event.pageSize
+      pageable.pageNumber = event.pageIndex;
     }
 
     this.authorService.getAuthors(pageable).subscribe(data => {
-        this.dataSource.data = data.content;
-        this.pageNumber = data.pageable.pageNumber;
-        this.pageSize = data.pageable.pageSize;
-        this.totalElements = data.totalElements;
+      this.dataSource.data = data.content;
+      this.pageNumber = data.pageable.pageNumber;
+      this.pageSize = data.pageable.pageSize;
+      this.totalElements = data.totalElements;
     });
   }  
 
   createAuthor() {      
     const dialogRef = this.dialog.open(AuthorEditComponent, {
-    data: {}
+      data: {}
     });
 
     dialogRef.afterClosed().subscribe(result => {
-    this.ngOnInit();
+      this.ngOnInit();
     });      
   }  
 
   editAuthor(author: Author) {    
     const dialogRef = this.dialog.open(AuthorEditComponent, {
-    data: { author: author }
+      data: { author: author }
     });
 
     dialogRef.afterClosed().subscribe(result => {
-    this.ngOnInit();
+      this.ngOnInit();
     });    
   }
 
   deleteAuthor(author: Author) {    
     const dialogRef = this.dialog.open(DialogConfirmationComponent, {
-    data: { title: "Eliminar autor", description: "Atención si borra el autor se perderán sus datos.<br> ¿Desea eliminar el autor?" }
+      data: { title: "Eliminar autor", description: "Atención si borra el autor se perderán sus datos.<br> ¿Desea eliminar el autor?" }
     });
 
     dialogRef.afterClosed().subscribe(result => {
-    if (result) {
+      if (result) {
         this.authorService.deleteAuthor(author.id).subscribe(result =>  {
-        this.ngOnInit();
-    }); 
-    }
+          this.ngOnInit();
+        }); 
+      }
     });
   }  
 }

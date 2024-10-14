@@ -49,7 +49,7 @@ export class ClientListComponent implements OnInit {
 
   deleteClient(client: Client) {
     const dialogRef = this.dialog.open(DialogConfirmationComponent, {
-      data: { title: "Eliminar cliente", description: "Atención si borra la categoría se perderán sus datos.<br> ¿Desea eliminar al cliente?" }
+      data: { title: "Eliminar cliente", description: "Atención si borra al cliente se perderán sus datos.<br> ¿Desea eliminar al cliente?" }
     });
 
     dialogRef.afterClosed().subscribe(result => {

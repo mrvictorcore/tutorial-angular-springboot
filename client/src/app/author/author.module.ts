@@ -32,9 +32,9 @@ import { MatPaginatorModule } from '@angular/material/paginator';
   ],
   providers: [
     {
-        provide: MAT_DIALOG_DATA,
-        useValue: {},
+      provide: MAT_DIALOG_DATA,
+      useValue: {},
     },
-]
+  ]
 })
 export class AuthorModule { }

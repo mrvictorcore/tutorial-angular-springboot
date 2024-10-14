@@ -9,6 +9,7 @@ import { Client } from './model/Client';
 export class ClientService {
 
   private apiUrl = 'http://localhost:8080/client';
+
   constructor(
     private http: HttpClient
   ) { }
@@ -25,6 +26,6 @@ export class ClientService {
   }
 
   deleteClient(idClient: number): Observable<void> {
-    return this.http.delete<void>(this.apiUrl + '/' + idClient);
+    return this.http.delete<void>(`${this.apiUrl}/${idClient}`);
   }
 }
