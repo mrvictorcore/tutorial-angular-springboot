@@ -6,10 +6,13 @@ import java.util.List;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ccsw.tutorial.client.ClientService;
+import com.ccsw.tutorial.common.criteria.SearchCriteria;
+import com.ccsw.tutorial.common.pagination.PageableRequest;
 import com.ccsw.tutorial.game.GameService;
 import com.ccsw.tutorial.loan.model.Loan;
 import com.ccsw.tutorial.loan.model.LoanDto;
@@ -42,7 +45,7 @@ public class LoanServiceImpl implements LoanService {
 
     @Override
     public Page<Loan> findPage(LoanSearchDto dto) {
-        return loanRepository.findAll(dto.getPageable().getPageable());
+        return this.loanRepository.findAll(dto.getPageable().getPageable());
     }
 
     @Override
@@ -91,14 +94,33 @@ public class LoanServiceImpl implements LoanService {
 
     @Override
     public boolean validateLoan(LoanDto loanDto) {
-        List<Loan> conflictingLoans = loanRepository.findConflictingLoans(loanDto.getGame().getId(),
-                loanDto.getStartDate(), loanDto.getEndDate());
+        LocalDate startDate = loanDto.getStartDate();
+        LocalDate endDate = loanDto.getEndDate();
 
+        // Crear especificación para buscar solapamientos
+        LoanSpecification conflictSpec = new LoanSpecification(
+                new SearchCriteria(loanDto.getGame().getId(), "conflict", new LocalDate[] { startDate, endDate }));
+
+        // Buscar préstamos conflictivos
+        List<Loan> conflictingLoans = loanRepository.findAll(Specification.where(conflictSpec));
+
+        // Si no hay préstamos conflictivos, la validación es exitosa
         return conflictingLoans.isEmpty();
     }
 
     @Override
-    public List<Loan> findLoansFiltered(String title, Long clientId, LocalDate searchDate) {
-        return loanRepository.findLoansFiltered(title, clientId, searchDate);
+    public Page<Loan> findLoansFiltered(LoanSearchDto dto) {
+        if (dto.getPageable() == null) {
+            dto.setPageable(new PageableRequest(0, 10));
+        }
+
+        LoanSpecification gameSpec = new LoanSpecification(new SearchCriteria("game.id", ":", dto.getGameId()));
+        LoanSpecification clientSpec = new LoanSpecification(new SearchCriteria("client.id", ":", dto.getClientId()));
+        LoanSpecification dateSpec = new LoanSpecification(
+                new SearchCriteria("searchDate", "dateRange", dto.getSearchDate()));
+
+        Specification<Loan> spec = Specification.where(gameSpec).and(clientSpec).and(dateSpec);
+
+        return loanRepository.findAll(spec, dto.getPageable().getPageable());
     }
 }

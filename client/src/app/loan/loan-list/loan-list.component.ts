@@ -1,12 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { MatTableDataSource } from '@angular/material/table';
-import { Loan } from '../model/Loan';
-import { LoanService } from '../loan.service';
 import { MatDialog } from '@angular/material/dialog';
+import { PageEvent } from '@angular/material/paginator';
+import { MatTableDataSource } from '@angular/material/table';
+import { Pageable } from 'src/app/core/model/page/Pageable';
 import { LoanEditComponent } from '../loan-edit/loan-edit.component';
 import { DialogConfirmationComponent } from 'src/app/core/dialog-confirmation/dialog-confirmation.component';
-import { PageEvent } from '@angular/material/paginator';
-import { Pageable } from 'src/app/core/model/page/Pageable';
+import { LoanService } from '../loan.service';
+import { Loan } from '../model/Loan';
 import { Client } from 'src/app/client/model/Client';
 import { Game } from 'src/app/game/model/Game';
 import { GameService } from 'src/app/game/game.service';
@@ -19,8 +19,8 @@ import { ClientService } from 'src/app/client/client.service';
 })
 export class LoanListComponent implements OnInit {
   clients: Client[];
-  loans: Loan[];
   games: Game[];
+  loans: Loan[];
 
   filterTitle: string;
   filterClient: Client;
@@ -39,7 +39,7 @@ export class LoanListComponent implements OnInit {
     private gameService: GameService,
     private clientService: ClientService,
     public dialog: MatDialog
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.loadPage();
@@ -48,10 +48,9 @@ export class LoanListComponent implements OnInit {
   }
 
   onCleanFilter(): void {
-    this.filterTitle = null;
+    this.filterGame = null;
     this.filterClient = null;
     this.filterDate = null;
-  
     this.loadPage();
   }
 
@@ -74,15 +73,16 @@ export class LoanListComponent implements OnInit {
       pageable.pageNumber = event.pageIndex;
     }
 
-    if (this.filterTitle || this.filterClient || this.filterDate) {
-      let title = this.filterTitle;
+    if (this.filterGame || this.filterClient || this.filterDate) {
+      let gameId = this.filterGame ? this.filterGame.id : null;
       let clientId = this.filterClient ? this.filterClient.id : null;
       let searchDate = this.filterDate ? this.filterDate.toISOString().split('T')[0] : null;
 
-      this.loanService.getLoansFiltered(title, clientId, searchDate).subscribe(loans => {
-        this.loans = loans;
-        this.dataSource.data = loans;
-        this.totalElements = loans.length;
+      this.loanService.getLoansFiltered(gameId, clientId, searchDate, pageable).subscribe(data => {
+        this.dataSource.data = data.content;
+        this.pageNumber = data.pageable.pageNumber;
+        this.pageSize = data.pageable.pageSize;
+        this.totalElements = data.totalElements;
       });
 
     } else {

@@ -12,19 +12,20 @@ export class LoanService {
 
   private apiUrl = 'http://localhost:8080/loan';
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   getLoans(pageable: Pageable): Observable<LoanPage> {
-    return this.http.post<LoanPage>(`${this.apiUrl}/paginated`, { pageable: pageable });
+    return this.http.post<LoanPage>(`${this.apiUrl}/paginated`, { pageable });
   }
 
-  getLoansFiltered(title?: string, clientId?: number, searchDate?: string): Observable<Loan[]> {
-    let params = new HttpParams();
-    if (title) params = params.set('title', title);
-    if (clientId) params = params.set('clientId', clientId.toString());
-    if (searchDate) params = params.set('searchDate', searchDate);
-
-    return this.http.get<Loan[]>(`${this.apiUrl}/filtered`, { params });
+  getLoansFiltered(gameId?: number, clientId?: number, searchDate?: string, pageable?: Pageable): Observable<LoanPage> {
+    const params = {
+      gameId: gameId || null,
+      clientId: clientId || null,
+      searchDate: searchDate || null,
+      pageable: pageable || { pageNumber: 0, pageSize: 5, sort: [{ property: 'id', direction: 'ASC' }] }
+    };
+    return this.http.post<LoanPage>(`${this.apiUrl}/filtered`, params);
   }
 
   saveLoan(loan: Loan): Observable<Loan> {

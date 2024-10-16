@@ -56,6 +56,9 @@ export class LoanEditComponent implements OnInit {
   
     const startDate = new Date(this.loan.startDate);
     const endDate = new Date(this.loan.endDate);
+
+    this.loan.startDate = this.convertToISODate(startDate);
+    this.loan.endDate = this.convertToISODate(endDate);
   
     if (endDate < startDate) {
       this.openAlertDialog('Error al guardar prestamo', 'La fecha de fin no puede ser anterior a la fecha de inicio.');

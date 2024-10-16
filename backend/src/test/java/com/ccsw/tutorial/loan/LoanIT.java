@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.time.LocalDate;
-import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -35,40 +35,49 @@ public class LoanIT {
     @Autowired
     private TestRestTemplate restTemplate;
 
-    private static final ParameterizedTypeReference<List<LoanDto>> responseType = new ParameterizedTypeReference<List<LoanDto>>() {
+    // Se espera una respuesta de tipo PageImpl
+    private static final ParameterizedTypeReference<PageImpl<LoanDto>> responseType = new ParameterizedTypeReference<PageImpl<LoanDto>>() {
     };
 
     @Test
     public void findAllShouldReturnAllLoans() {
-        ResponseEntity<List<LoanDto>> response = restTemplate.exchange(LOCALHOST + port + SERVICE_PATH, HttpMethod.GET,
-                null, responseType);
+        // Realizar la petición al servidor
+        ResponseEntity<PageImpl<LoanDto>> response = restTemplate
+                .exchange(LOCALHOST + port + SERVICE_PATH + "/paginated", HttpMethod.POST, null, responseType);
+
+        // Verificar que la respuesta no es nula
         assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode()); // Método actualizado
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        // Verificar el contenido de la página
+        PageImpl<LoanDto> loansPage = response.getBody();
+        assertNotNull(loansPage);
+        assertEquals(5, loansPage.getTotalElements()); // Ajusta según lo esperado en tus datos de prueba
     }
 
     @Test
     public void createLoanShouldCreateNewLoan() {
+        // Crear el préstamo (LoanDto)
         LoanDto loanDto = new LoanDto();
 
-        // Configurar el cliente
         ClientDto clientDto = new ClientDto();
         clientDto.setId(1L);
         clientDto.setName("Client1");
         loanDto.setClient(clientDto);
 
-        // Configurar el juego
         GameDto gameDto = new GameDto();
         gameDto.setId(1L);
         gameDto.setTitle("Game1");
         loanDto.setGame(gameDto);
 
-        // Configurar las fechas del préstamo
         loanDto.setStartDate(LocalDate.now());
         loanDto.setEndDate(LocalDate.now().plusDays(7));
 
-        // Realizar la solicitud PUT para crear el préstamo
-        ResponseEntity<Void> response = restTemplate.exchange(LOCALHOST + port + SERVICE_PATH, HttpMethod.PUT,
+        // Realizar la petición de creación de préstamo (usamos POST en lugar de PUT)
+        ResponseEntity<Void> response = restTemplate.exchange(LOCALHOST + port + SERVICE_PATH, HttpMethod.POST,
                 new HttpEntity<>(loanDto), Void.class);
+
+        // Verificar que la creación fue exitosa
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 }

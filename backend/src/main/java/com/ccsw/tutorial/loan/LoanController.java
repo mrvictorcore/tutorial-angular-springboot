@@ -1,14 +1,11 @@
 package com.ccsw.tutorial.loan;
 
-import java.time.LocalDate;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,7 +14,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ccsw.tutorial.loan.model.Loan;
@@ -47,6 +43,7 @@ public class LoanController {
     @RequestMapping(path = "/paginated", method = RequestMethod.POST)
     public Page<LoanDto> findPage(@RequestBody LoanSearchDto dto) {
         Page<Loan> page = this.loanService.findPage(dto);
+
         return new PageImpl<>(
                 page.getContent().stream().map(e -> mapper.map(e, LoanDto.class)).collect(Collectors.toList()),
                 page.getPageable(), page.getTotalElements());
@@ -76,12 +73,12 @@ public class LoanController {
         return ResponseEntity.ok(isValid);
     }
 
-    @Operation(summary = "Get Loans by filters", description = "Method to get loans by filters")
-    @RequestMapping(path = "/filtered", method = RequestMethod.GET)
-    public List<LoanDto> findLoansFiltered(@RequestParam(required = false) String title,
-            @RequestParam(required = false) Long clientId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate searchDate) {
-        List<Loan> loans = loanService.findLoansFiltered(title, clientId, searchDate);
-        return loans.stream().map(loan -> mapper.map(loan, LoanDto.class)).collect(Collectors.toList());
+    @Operation(summary = "Find Loans by filters", description = "Method to get loans by filters")
+    @RequestMapping(path = "/filtered", method = RequestMethod.POST)
+    public Page<LoanDto> findLoansFiltered(@RequestBody LoanSearchDto dto) {
+        Page<Loan> loans = loanService.findLoansFiltered(dto);
+        return new PageImpl<>(
+                loans.getContent().stream().map(loan -> mapper.map(loan, LoanDto.class)).collect(Collectors.toList()),
+                loans.getPageable(), loans.getTotalElements());
     }
 }

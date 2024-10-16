@@ -1,6 +1,5 @@
 package com.ccsw.tutorial.loan;
 
-import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -25,5 +24,5 @@ public interface LoanService {
 
     Page<Loan> findPage(LoanSearchDto dto);
 
-    List<Loan> findLoansFiltered(String title, Long clientId, LocalDate searchDate);
+    Page<Loan> findLoansFiltered(LoanSearchDto dto);
 }

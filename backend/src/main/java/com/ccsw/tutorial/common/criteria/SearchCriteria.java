@@ -1,5 +1,7 @@
 package com.ccsw.tutorial.common.criteria;
 
+import java.time.LocalDate;
+
 public class SearchCriteria {
 
     private String key;
@@ -11,6 +13,12 @@ public class SearchCriteria {
         this.key = key;
         this.operation = operation;
         this.value = value;
+    }
+
+    public SearchCriteria(Long gameId, String operation, LocalDate[] dates) {
+        this.key = gameId != null ? gameId.toString() : null;
+        this.operation = operation;
+        this.value = dates;
     }
 
     public String getKey() {
