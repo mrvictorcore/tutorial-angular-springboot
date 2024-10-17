@@ -74,9 +74,10 @@ public class LoanController {
     }
 
     @Operation(summary = "Find Loans by filters", description = "Method to get loans by filters")
-    @RequestMapping(path = "/filtered", method = RequestMethod.POST)
+    @PostMapping("/filtered")
     public Page<LoanDto> findLoansFiltered(@RequestBody LoanSearchDto dto) {
         Page<Loan> loans = loanService.findLoansFiltered(dto);
+
         return new PageImpl<>(
                 loans.getContent().stream().map(loan -> mapper.map(loan, LoanDto.class)).collect(Collectors.toList()),
                 loans.getPageable(), loans.getTotalElements());

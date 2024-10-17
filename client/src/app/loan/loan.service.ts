@@ -19,12 +19,13 @@ export class LoanService {
   }
 
   getLoansFiltered(gameId?: number, clientId?: number, searchDate?: string, pageable?: Pageable): Observable<LoanPage> {
-    const params = {
+    const params: any = {
       gameId: gameId || null,
       clientId: clientId || null,
       searchDate: searchDate || null,
       pageable: pageable || { pageNumber: 0, pageSize: 5, sort: [{ property: 'id', direction: 'ASC' }] }
     };
+    
     return this.http.post<LoanPage>(`${this.apiUrl}/filtered`, params);
   }
 

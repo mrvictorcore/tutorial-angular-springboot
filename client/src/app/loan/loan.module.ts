@@ -15,7 +15,6 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatSelectModule } from '@angular/material/select';
 
 
-
 @NgModule({
   declarations: [
     LoanListComponent,
@@ -41,7 +40,7 @@ import { MatSelectModule } from '@angular/material/select';
     {
       provide: MAT_DIALOG_DATA,
       useValue: {},
-    },
+    }
   ]
 })
 export class LoanModule { }

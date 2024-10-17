@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ccsw.tutorial.client.ClientService;
 import com.ccsw.tutorial.common.criteria.SearchCriteria;
-import com.ccsw.tutorial.common.pagination.PageableRequest;
 import com.ccsw.tutorial.game.GameService;
 import com.ccsw.tutorial.loan.model.Loan;
 import com.ccsw.tutorial.loan.model.LoanDto;
@@ -52,12 +51,14 @@ public class LoanServiceImpl implements LoanService {
     public void save(Long id, LoanDto loanDto) {
         Loan loan;
 
+        // Si es un nuevo préstamo
         if (id == null) {
             loan = new Loan();
         } else {
             loan = loanRepository.findById(id).orElseThrow(() -> new RuntimeException("Préstamo no encontrado"));
         }
 
+        // Validar que el cliente y el juego sean válidos
         if (loanDto.getClient() == null || loanDto.getClient().getId() == null) {
             throw new RuntimeException("El cliente es obligatorio");
         }
@@ -66,6 +67,7 @@ public class LoanServiceImpl implements LoanService {
             throw new RuntimeException("El juego es obligatorio");
         }
 
+        // Validar las fechas de inicio y fin
         if (loanDto.getStartDate() == null) {
             throw new RuntimeException("La fecha de inicio es obligatoria");
         }
@@ -78,9 +80,21 @@ public class LoanServiceImpl implements LoanService {
             throw new RuntimeException("La fecha de fin no puede ser anterior a la fecha de inicio");
         }
 
+        // Validar que la fecha de inicio no sea en el pasado
+        LocalDate today = LocalDate.now();
+        if (loanDto.getStartDate().isBefore(today)) {
+            throw new RuntimeException("No se puede crear un préstamo para una fecha pasada");
+        }
+
+        // Verificar que no haya un solapamiento con otros préstamos
+        boolean isConflict = !validateLoan(loanDto);
+        if (isConflict) {
+            throw new RuntimeException("El juego ya está prestado en las fechas seleccionadas");
+        }
+
+        // Asignar cliente y juego al préstamo
         loan.setClient(clientService.get(loanDto.getClient().getId()));
         loan.setGame(gameService.get(loanDto.getGame().getId()));
-
         loan.setStartDate(loanDto.getStartDate());
         loan.setEndDate(loanDto.getEndDate());
 
@@ -104,23 +118,31 @@ public class LoanServiceImpl implements LoanService {
         // Buscar préstamos conflictivos
         List<Loan> conflictingLoans = loanRepository.findAll(Specification.where(conflictSpec));
 
-        // Si no hay préstamos conflictivos, la validación es exitosa
+        // Si hay préstamos conflictivos, la validación falla
         return conflictingLoans.isEmpty();
     }
 
     @Override
     public Page<Loan> findLoansFiltered(LoanSearchDto dto) {
-        if (dto.getPageable() == null) {
-            dto.setPageable(new PageableRequest(0, 10));
+        // Crear la especificación con todos los filtros.
+        Specification<Loan> spec = Specification.where(null);
+
+        // Filtro por gameId
+        if (dto.getGameId() != null) {
+            spec = spec.and(new LoanSpecification(new SearchCriteria("game.id", ":", dto.getGameId())));
         }
 
-        LoanSpecification gameSpec = new LoanSpecification(new SearchCriteria("game.id", ":", dto.getGameId()));
-        LoanSpecification clientSpec = new LoanSpecification(new SearchCriteria("client.id", ":", dto.getClientId()));
-        LoanSpecification dateSpec = new LoanSpecification(
-                new SearchCriteria("searchDate", "dateRange", dto.getSearchDate()));
+        // Filtro por clientId
+        if (dto.getClientId() != null) {
+            spec = spec.and(new LoanSpecification(new SearchCriteria("client.id", ":", dto.getClientId())));
+        }
 
-        Specification<Loan> spec = Specification.where(gameSpec).and(clientSpec).and(dateSpec);
+        // Filtro por searchDate (busca préstamos en esa fecha)
+        if (dto.getSearchDate() != null) {
+            spec = spec.and(new LoanSpecification(new SearchCriteria("startDate", "dateRange", dto.getSearchDate())));
+        }
 
+        // Ejecutar la consulta con las especificaciones
         return loanRepository.findAll(spec, dto.getPageable().getPageable());
     }
 }

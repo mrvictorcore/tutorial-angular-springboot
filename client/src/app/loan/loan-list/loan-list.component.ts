@@ -67,24 +67,24 @@ export class LoanListComponent implements OnInit {
         direction: 'ASC'
       }]
     };
-
+  
     if (event != null) {
       pageable.pageSize = event.pageSize;
       pageable.pageNumber = event.pageIndex;
     }
-
+  
     if (this.filterGame || this.filterClient || this.filterDate) {
       let gameId = this.filterGame ? this.filterGame.id : null;
       let clientId = this.filterClient ? this.filterClient.id : null;
-      let searchDate = this.filterDate ? this.filterDate.toISOString().split('T')[0] : null;
-
+      let searchDate = this.filterDate ? new Date(this.filterDate.getTime() - this.filterDate.getTimezoneOffset() * 60000).toISOString().split('T')[0] : null;
+  
       this.loanService.getLoansFiltered(gameId, clientId, searchDate, pageable).subscribe(data => {
         this.dataSource.data = data.content;
         this.pageNumber = data.pageable.pageNumber;
         this.pageSize = data.pageable.pageSize;
         this.totalElements = data.totalElements;
       });
-
+  
     } else {
       this.loanService.getLoans(pageable).subscribe(data => {
         this.dataSource.data = data.content;
