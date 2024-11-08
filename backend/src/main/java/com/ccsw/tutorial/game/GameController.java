@@ -26,7 +26,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Game", description = "API of Game")
 @RequestMapping(value = "/game")
 @RestController
-@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
+@CrossOrigin(origins = "*")
 public class GameController {
 
     @Autowired

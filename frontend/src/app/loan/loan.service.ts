@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { catchError, Observable, throwError } from 'rxjs';
 import { LoanPage } from './model/LoanPage';
 import { Pageable } from '../core/model/page/Pageable';
 import { Loan } from './model/Loan';
@@ -30,11 +30,13 @@ export class LoanService {
   }
 
   saveLoan(loan: Loan): Observable<Loan> {
-    if (loan.id) {
-      return this.http.put<Loan>(`${this.apiUrl}/${loan.id}`, loan);
-    } else {
-      return this.http.post<Loan>(this.apiUrl, loan);
-    }
+    const request = loan.id ? this.http.put<Loan>(`${this.apiUrl}/${loan.id}`, loan) : this.http.post<Loan>(this.apiUrl, loan);
+    return request.pipe(
+      catchError((error) => {
+        const errorMsg = error.error?.message || 'Error inesperado al guardar el préstamo.';
+        return throwError(() => new Error(errorMsg));
+      })
+    );
   }
 
   deleteLoan(id: number): Observable<void> {
@@ -42,6 +44,11 @@ export class LoanService {
   }
 
   checkLoanValidity(loan: Loan): Observable<boolean> {
-    return this.http.post<boolean>(`${this.apiUrl}/validate`, loan);
+    return this.http.post<boolean>(`${this.apiUrl}/validate`, loan).pipe(
+      catchError((error) => {
+        const errorMsg = error.error || 'Error inesperado al validar el préstamo.';
+        return throwError(() => new Error(errorMsg));
+      })
+    );
   }
 }

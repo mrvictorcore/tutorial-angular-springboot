@@ -25,7 +25,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Category", description = "API of Category")
 @RequestMapping(value = "/category")
 @RestController
-@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
+//@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
+@CrossOrigin(origins = "*")
 public class CategoryController {
 
     @Autowired

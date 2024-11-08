@@ -16,7 +16,6 @@ import jakarta.persistence.criteria.Root;
 public class LoanSpecification implements Specification<Loan> {
 
     private static final long serialVersionUID = 1L;
-
     private final SearchCriteria criteria;
 
     public LoanSpecification(SearchCriteria criteria) {
@@ -25,60 +24,42 @@ public class LoanSpecification implements Specification<Loan> {
 
     @Override
     public Predicate toPredicate(Root<Loan> root, CriteriaQuery<?> query, CriteriaBuilder builder) {
-        // Filtro por ID o comparación exacta
         if (criteria.getOperation().equalsIgnoreCase(":") && criteria.getValue() != null) {
-            Path<String> path = getPath(root);
-
-            if (path.getJavaType() == String.class) {
-                return builder.like(path, "%" + criteria.getValue() + "%");
-            } else {
-                return builder.equal(path, criteria.getValue());
-            }
+            Path<?> path = getPath(root);
+            return builder.equal(path, criteria.getValue());
         }
 
-        // Verificación de solapamiento de fechas (para evitar conflictos en nuevos
-        // préstamos)
-        if (criteria.getOperation().equalsIgnoreCase("conflict") && criteria.getValue() != null) {
+        if (criteria.getOperation().equalsIgnoreCase("conflict") && criteria.getValue() instanceof LocalDate[]) {
             LocalDate[] dates = (LocalDate[]) criteria.getValue();
             LocalDate startDate = dates[0];
             LocalDate endDate = dates[1];
 
-            // Verificar solapamiento de fechas
-            return builder.and(builder.equal(root.get("game").get("id"), criteria.getKey()), // Mismo juego
+            // Conflicto de fechas para el mismo juego o cliente según la clave
+            return builder.and(builder.equal(
+                    criteria.getKey().equals("client") ? root.get("client").get("id") : root.get("game").get("id"),
+                    criteria.getKey().equals("client") ? root.get("client").get("id") : root.get("game").get("id")),
                     builder.or(builder.between(root.get("startDate"), startDate, endDate),
                             builder.between(root.get("endDate"), startDate, endDate),
                             builder.and(builder.lessThanOrEqualTo(root.get("startDate"), startDate),
                                     builder.greaterThanOrEqualTo(root.get("endDate"), endDate))));
         }
 
-        // Filtro de rango de fechas (para buscar préstamos activos en una fecha
-        // específica)
-        if (criteria.getOperation().equalsIgnoreCase("dateRange") && criteria.getValue() != null) {
+        if (criteria.getOperation().equalsIgnoreCase("dateRange") && criteria.getValue() instanceof LocalDate) {
             LocalDate searchDate = (LocalDate) criteria.getValue();
-
-            // Verificar si la fecha de búsqueda coincide con las fechas de inicio, fin o
-            // está entre ellas
-            return builder.or(builder.equal(root.get("startDate"), searchDate), // Coincide con la fecha de inicio
-                    builder.equal(root.get("endDate"), searchDate), // Coincide con la fecha de fin
-                    builder.between(builder.literal(searchDate), root.get("startDate"), root.get("endDate")) // Entre
-                                                                                                             // inicio y
-                                                                                                             // fin
-            );
+            return builder.or(builder.equal(root.get("startDate"), searchDate),
+                    builder.equal(root.get("endDate"), searchDate),
+                    builder.between(builder.literal(searchDate), root.get("startDate"), root.get("endDate")));
         }
 
         return null;
     }
 
-    // Método auxiliar para obtener el Path del criterio
-    private Path<String> getPath(Root<Loan> root) {
-        String key = criteria.getKey();
-        String[] split = key.split("\\.");
-
-        Path<String> expression = root.get(split[0]);
+    private Path<?> getPath(Root<Loan> root) {
+        String[] split = criteria.getKey().split("\\.");
+        Path<?> path = root.get(split[0]);
         for (int i = 1; i < split.length; i++) {
-            expression = expression.get(split[i]);
+            path = path.get(split[i]);
         }
-
-        return expression;
+        return path;
     }
 }

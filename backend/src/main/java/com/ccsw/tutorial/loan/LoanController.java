@@ -30,7 +30,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Loan", description = "API of Loan")
 @RequestMapping(value = "/loan")
 @RestController
-@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
+@CrossOrigin(origins = "*")
 public class LoanController {
 
     @Autowired

@@ -28,7 +28,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Author", description = "API of Author")
 @RequestMapping(value = "/author")
 @RestController
-@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
+@CrossOrigin(origins = "*")
 public class AuthorController {
 
     @Autowired

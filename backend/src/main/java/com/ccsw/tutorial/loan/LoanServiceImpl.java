@@ -2,6 +2,7 @@ package com.ccsw.tutorial.loan;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,15 +13,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ccsw.tutorial.client.ClientService;
 import com.ccsw.tutorial.common.criteria.SearchCriteria;
+import com.ccsw.tutorial.exceptions.ApplicationException;
 import com.ccsw.tutorial.game.GameService;
 import com.ccsw.tutorial.loan.model.Loan;
 import com.ccsw.tutorial.loan.model.LoanDto;
 import com.ccsw.tutorial.loan.model.LoanSearchDto;
 
-/**
- * @author ccsw
- *
- */
 @Service
 @Transactional
 public class LoanServiceImpl implements LoanService {
@@ -49,52 +47,23 @@ public class LoanServiceImpl implements LoanService {
 
     @Override
     public void save(Long id, LoanDto loanDto) {
-        Loan loan;
+        validateLoanDto(loanDto);
 
-        // Si es un nuevo préstamo
+        System.out.println("LoanDto recibido: " + loanDto);
+
+        Loan loan;
         if (id == null) {
             loan = new Loan();
         } else {
-            loan = loanRepository.findById(id).orElseThrow(() -> new RuntimeException("Préstamo no encontrado"));
+            loan = loanRepository.findById(id).orElseThrow(() -> new ApplicationException("Préstamo no encontrado"));
         }
 
-        // Validar que el cliente y el juego sean válidos
-        if (loanDto.getClient() == null || loanDto.getClient().getId() == null) {
-            throw new RuntimeException("El cliente es obligatorio");
+        try {
+            loan.setClient(clientService.get(loanDto.getClient().getId()));
+            loan.setGame(gameService.get(loanDto.getGame().getId()));
+        } catch (Exception e) {
+            throw new ApplicationException("Error al mapear LoanDto a Loan: " + e.getMessage(), e);
         }
-
-        if (loanDto.getGame() == null || loanDto.getGame().getId() == null) {
-            throw new RuntimeException("El juego es obligatorio");
-        }
-
-        // Validar las fechas de inicio y fin
-        if (loanDto.getStartDate() == null) {
-            throw new RuntimeException("La fecha de inicio es obligatoria");
-        }
-
-        if (loanDto.getEndDate() == null) {
-            throw new RuntimeException("La fecha de fin es obligatoria");
-        }
-
-        if (loanDto.getEndDate().isBefore(loanDto.getStartDate())) {
-            throw new RuntimeException("La fecha de fin no puede ser anterior a la fecha de inicio");
-        }
-
-        // Validar que la fecha de inicio no sea en el pasado
-        LocalDate today = LocalDate.now();
-        if (loanDto.getStartDate().isBefore(today)) {
-            throw new RuntimeException("No se puede crear un préstamo para una fecha pasada");
-        }
-
-        // Verificar que no haya un solapamiento con otros préstamos
-        boolean isConflict = !validateLoan(loanDto);
-        if (isConflict) {
-            throw new RuntimeException("El juego ya está prestado en las fechas seleccionadas");
-        }
-
-        // Asignar cliente y juego al préstamo
-        loan.setClient(clientService.get(loanDto.getClient().getId()));
-        loan.setGame(gameService.get(loanDto.getGame().getId()));
         loan.setStartDate(loanDto.getStartDate());
         loan.setEndDate(loanDto.getEndDate());
 
@@ -111,38 +80,84 @@ public class LoanServiceImpl implements LoanService {
         LocalDate startDate = loanDto.getStartDate();
         LocalDate endDate = loanDto.getEndDate();
 
-        // Crear especificación para buscar solapamientos
-        LoanSpecification conflictSpec = new LoanSpecification(
-                new SearchCriteria(loanDto.getGame().getId(), "conflict", new LocalDate[] { startDate, endDate }));
+        if (endDate.isBefore(startDate)) {
+            throw new ApplicationException("La fecha de fin no puede ser anterior a la fecha de inicio");
+        }
 
-        // Buscar préstamos conflictivos
-        List<Loan> conflictingLoans = loanRepository.findAll(Specification.where(conflictSpec));
+        if (startDate.plusDays(14).isBefore(endDate)) {
+            throw new ApplicationException("El periodo de préstamo no puede exceder los 14 días");
+        }
 
-        // Si hay préstamos conflictivos, la validación falla
-        return conflictingLoans.isEmpty();
+        // Validación de conflicto para el juego
+        Specification<Loan> gameConflictSpec = Specification.where(
+                new LoanSpecification(new SearchCriteria("game", "conflict", new LocalDate[] { startDate, endDate })));
+        List<Loan> conflictingGameLoans = loanRepository.findAll(gameConflictSpec).stream()
+                .filter(loan -> loan.getGame().getId().equals(loanDto.getGame().getId())).collect(Collectors.toList());
+
+        if (!conflictingGameLoans.isEmpty()) {
+            throw new ApplicationException("El juego ya está prestado en las fechas seleccionadas");
+        }
+
+        // Validación de conflicto para el cliente, máximo 2 juegos en fechas solapadas
+        Specification<Loan> clientConflictSpec = Specification.where(new LoanSpecification(
+                new SearchCriteria("client", "conflict", new LocalDate[] { startDate, endDate })));
+        List<Loan> clientLoans = loanRepository.findAll(clientConflictSpec).stream()
+                .filter(loan -> loan.getClient().getId().equals(loanDto.getClient().getId()))
+                .collect(Collectors.toList());
+
+        if (clientLoans.size() >= 2) {
+            throw new ApplicationException("El cliente ya tiene dos juegos prestados en las fechas seleccionadas");
+        }
+
+        return true;
     }
 
     @Override
     public Page<Loan> findLoansFiltered(LoanSearchDto dto) {
-        // Crear la especificación con todos los filtros.
         Specification<Loan> spec = Specification.where(null);
 
-        // Filtro por gameId
         if (dto.getGameId() != null) {
             spec = spec.and(new LoanSpecification(new SearchCriteria("game.id", ":", dto.getGameId())));
         }
 
-        // Filtro por clientId
         if (dto.getClientId() != null) {
             spec = spec.and(new LoanSpecification(new SearchCriteria("client.id", ":", dto.getClientId())));
         }
 
-        // Filtro por searchDate (busca préstamos en esa fecha)
         if (dto.getSearchDate() != null) {
             spec = spec.and(new LoanSpecification(new SearchCriteria("startDate", "dateRange", dto.getSearchDate())));
         }
 
-        // Ejecutar la consulta con las especificaciones
         return loanRepository.findAll(spec, dto.getPageable().getPageable());
+    }
+
+    private void validateLoanDto(LoanDto loanDto) {
+        if (loanDto.getClient() == null || loanDto.getClient().getId() == null) {
+            throw new ApplicationException("El cliente es obligatorio");
+        }
+
+        if (loanDto.getGame() == null || loanDto.getGame().getId() == null) {
+            throw new ApplicationException("El juego es obligatorio");
+        }
+
+        if (loanDto.getStartDate() == null) {
+            throw new ApplicationException("La fecha de inicio es obligatoria");
+        }
+
+        if (loanDto.getEndDate() == null) {
+            throw new ApplicationException("La fecha de fin es obligatoria");
+        }
+
+        if (loanDto.getEndDate().isBefore(loanDto.getStartDate())) {
+            throw new ApplicationException("La fecha de fin no puede ser anterior a la fecha de inicio");
+        }
+
+        if (loanDto.getStartDate().isBefore(LocalDate.now())) {
+            throw new ApplicationException("No se puede crear un préstamo para una fecha pasada");
+        }
+
+        if (!validateLoan(loanDto)) {
+            throw new ApplicationException("El juego ya está prestado en las fechas seleccionadas");
+        }
     }
 }
